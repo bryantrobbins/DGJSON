@@ -19,12 +19,11 @@ boot2docker start
 gradle buildImage
 ```
 
-At this point, you should have a Docker image with tag "finraos/dgjson". You can run this image using the docker run command.
-See full documentation of the Docker run cmd here: https://docs.docker.com/reference/run/
+At this point, you should have a Docker image with tag "finraos/dgjson". Because the image uses an Ubuntu base image, your first build may take some time. After a successful build, you should be able to see the Docker image by running:
 
-# More details
+```
+docker images
+```
 
-The Gradle script is using docker-java under the hood to build the image. The same library could also be used to actually run Docker containers based on
-the generated image (or any Docker images). We may be able to expand the gradle script to include "run"-related Docker
-commands for test purposes.
+You can run this image using the docker run command. See full documentation of the Docker run cmd here: https://docs.docker.com/reference/run/. The Gradle script is using docker-java under the hood to build the image. The same library could also be used to actually run Docker containers based on the generated image (or any Docker images). We may be able to expand the gradle script to include "run"-related Docker commands for test purposes in the future. Find more about docker-java here: https://github.com/docker-java/docker-java
 
