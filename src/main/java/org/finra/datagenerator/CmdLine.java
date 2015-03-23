@@ -22,8 +22,9 @@ import java.util.Map;
 public class CmdLine {
 
     public static void main(String[] args) {
-        //Read in the json model from standard in
-        String inputJSON = InputStreamReader.readToCompletion(System.in);
+        // Load simple args
+				String outputKey = args[0];	
+        String inputJSON = args[1];
 
         //Parse and validate the model
         ObjectMapper mapper = new ObjectMapper();
@@ -78,7 +79,7 @@ public class CmdLine {
 
         //Write out the results
         try {
-            PrintWriter writer = new PrintWriter("./results.txt", "UTF-8");
+            PrintWriter writer = new PrintWriter(outputKey, "UTF-8");
 
             for (Map<String, String> row : rows) {
                 boolean  firstValue = true;

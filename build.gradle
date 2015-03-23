@@ -1,0 +1,99 @@
+import com.github.dockerjava.core.DockerClientBuilder
+import org.apache.commons.io.IOUtils
+
+apply plugin:'application'
+
+mainClassName = "org.finra.datagenerator.CmdLine"
+applicationName = "dgjson"
+
+def dockerUrlVal = hasProperty('dockerUrl') ? dockerUrl : 'https://192.168.59.103:2376'
+def client = DockerClientBuilder.getInstance(dockerUrlVal).build();
+def dockerfileContent = '''
+FROM ubuntu:14.10
+MAINTAINER Bryan Robbins "bryantrobbins@gmail.com"
+RUN apt-get update && apt-get clean
+RUN apt-get -y install openjdk-7-jdk --no-install-recommends --no-install-suggests
+COPY dgjson.tar /opt/dgjson.tar
+WORKDIR /opt
+RUN tar -xvf dgjson.tar 
+VOLUME ["/data"]
+ENTRYPOINT ["/opt/dgjson/bin/dgjson"]
+'''
+
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath 'com.github.docker-java:docker-java:0.10.5'
+    classpath 'commons-io:commons-io:2.4'
+  }
+}
+
+repositories {
+		mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.codehaus.jackson:jackson-mapper-asl:1.9.13"
+		compile "org.finra.datagenerator:dg-core:2.1"
+    testCompile "junit:junit:4.11"
+}
+
+def getDockerfilePath(){
+  "build/docker"
+}
+
+def getImageTag(){
+  "finraos/dgjson"
+}
+
+def getCurrentDirectory(){
+  new File(".").getAbsoluteFile().parent.toString()
+}
+
+def withClient(client, clos){
+  clos(client)
+}
+
+def asString(inputStream){
+  IOUtils.toString(inputStream, "UTF-8")
+}
+
+def copyFile(src, dest){
+	def input = src.newDataInputStream()
+	def output = dest.newDataOutputStream()
+ 
+	output << input 
+ 
+	input.close()
+	output.close()
+}
+
+task writeDockerfile(dependsOn: distTar) <<
+{
+	def path = getDockerfilePath()
+  new File(path).mkdirs()
+  new File("${path}/Dockerfile").write(dockerfileContent)
+}
+
+task buildImage(dependsOn: writeDockerfile) <<
+{
+	def distFile = new File("build/distributions/dgjson.tar")
+	def distFileDest = new File(getDockerfilePath() + "/dgjson.tar")
+	copyFile(distFile, distFileDest)
+
+	def path = new File(getDockerfilePath())
+  def imageTag = getImageTag()
+  withClient(client){
+    def resp = it.buildImageCmd(path).withTag(imageTag).exec();
+    println asString(resp)
+  }
+}
+
+task generateData(dependsOn: buildImage) <<
+{
+		
+}
