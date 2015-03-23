@@ -1,5 +1,7 @@
 import com.github.dockerjava.core.DockerClientBuilder
 import org.apache.commons.io.IOUtils
+import com.github.dockerjava.api.model.Volume
+import com.github.dockerjava.api.model.Bind
 
 apply plugin:'application'
 
@@ -54,6 +56,10 @@ def getCurrentDirectory(){
   new File(".").getAbsoluteFile().parent.toString()
 }
 
+def getMount(){
+  new Volume("/data");
+}
+
 def withClient(client, clos){
   clos(client)
 }
@@ -70,6 +76,30 @@ def copyFile(src, dest){
  
 	input.close()
 	output.close()
+}
+
+def doCmds(client, cmds){
+  def imageTag = getImageTag()
+  def mount = getMount()
+  def wd = getCurrentDirectory()
+
+  withClient(client){
+    def container = it.createContainerCmd(imageTag)
+											.withVolumes(mount)
+											.withAttachStdin(true)
+											.withAttachStdout(true)
+											.withAttachStderr(true)
+
+    def resp = container.withCmd(cmds).exec()
+    def id = resp.getId()
+		println "Container id: ${id}"
+
+    it.startContainerCmd(id)
+      .withBinds(new Bind(wd, mount))
+      .exec()
+    it.waitContainerCmd(id)
+      .exec()
+  }
 }
 
 task writeDockerfile(dependsOn: distTar) <<
@@ -92,8 +122,11 @@ task buildImage(dependsOn: writeDockerfile) <<
     println asString(resp)
   }
 }
-
+def jsonData ='''
+"jsonField": "jsonValue"
+'''
 task generateData(dependsOn: buildImage) <<
 {
-		
+	def cmds = ["/data/myKey.out", jsonData] as String[]
+	doCmds(client, cmds)
 }
