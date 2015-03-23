@@ -19,7 +19,7 @@ boot2docker start
 gradle buildImage
 ```
 
-At this point, you should have a Docker image with tag "finraos/dgjson". Because the image uses an Ubuntu base image, your first build may take some time. After a successful build, you should be able to see the Docker image by running:
+At this point, you should have a Docker image with tag "finraos/dgjson". Because the image must fetch an Ubuntu base image, your first build may take some time. (Don't worry - all images are cached for your future builds!) After a successful build, you should be able to see the Docker image by running:
 
 ```
 docker images
